@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+
+runs/
+*.pt
+.DS_Store
+
+Obstacle detection.yolov8/train/images/
+Obstacle detection.yolov8/train/labels/
+Obstacle detection.yolov8/valid/
+Obstacle detection.yolov8/train/labels.cache

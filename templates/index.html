@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SightLink AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --cyan:#00d4ff; --red:#ff4444; --orange:#ff8800;
+      --yellow:#ffdd00; --green:#00cc44;
+      --bg:#080c14; --card:#0d1421; --border:#1a2540;
+    }
+    body { background:var(--bg); color:#e0e8ff; font-family:'Rajdhani',sans-serif; min-height:100vh; }
+    body::before {
+      content:''; position:fixed; inset:0; z-index:0;
+      background-image:linear-gradient(rgba(0,212,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.04) 1px,transparent 1px);
+      background-size:40px 40px; pointer-events:none;
+    }
+    header { position:relative; z-index:10; text-align:center; padding:2rem 1rem 1.2rem;
+      border-bottom:1px solid var(--border);
+      background:linear-gradient(180deg,rgba(0,212,255,.07) 0%,transparent 100%); }
+    header h1 { font-family:'Orbitron',monospace; font-size:clamp(1.8rem,4vw,3rem);
+      font-weight:900; color:var(--cyan); letter-spacing:.12em; animation:pulse 3s ease-in-out infinite; }
+    @keyframes pulse {
+      0%,100% { text-shadow:0 0 30px rgba(0,212,255,.5); }
+      50%      { text-shadow:0 0 60px rgba(0,212,255,.9),0 0 100px rgba(0,212,255,.4); }
+    }
+    header p { margin-top:.4rem; font-size:.95rem; color:#7a90b8; }
+    .badge { display:inline-flex; align-items:center; gap:.4rem; margin-top:.7rem;
+      padding:.25rem 1rem; border:1px solid var(--cyan); border-radius:999px;
+      font-size:.72rem; color:var(--cyan); letter-spacing:.1em; text-transform:uppercase; }
+    .dot-live { width:7px; height:7px; border-radius:50%; background:var(--green); animation:blink 1s infinite; }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.2;} }
+    .main { position:relative; z-index:10; display:grid; grid-template-columns:1fr 340px;
+      gap:1.5rem; max-width:1200px; margin:1.5rem auto; padding:0 1.5rem 3rem; }
+    @media(max-width:900px){.main{grid-template-columns:1fr;}}
+    .card { background:var(--card); border:1px solid var(--border); border-radius:14px;
+      padding:1.5rem; position:relative; overflow:hidden; }
+    .card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px;
+      background:linear-gradient(90deg,transparent,var(--cyan),transparent); }
+    .card-title { font-family:'Orbitron',monospace; font-size:.85rem; color:var(--cyan);
+      letter-spacing:.1em; margin-bottom:1rem; display:flex; align-items:center; gap:.6rem; }
+    .feed-wrap { width:100%; background:#000; border-radius:10px; border:1px solid var(--border);
+       overflow:hidden; min-height:420px; display:flex; align-items:center; justify-content:center; }
+    .feed-wrap img { width:100%; display:block; border-radius:10px; }
+    .feed-placeholder { text-align:center; color:#3a4a6a; padding:3rem; }
+    .feed-placeholder .icon { font-size:4rem; margin-bottom:1rem; }
+    .btn-row { display:flex; gap:.8rem; margin-top:1rem; flex-wrap:wrap; }
+    .btn { font-family:'Orbitron',monospace; font-size:.72rem; letter-spacing:.08em;
+      padding:.65rem 1.6rem; border-radius:8px; border:none; cursor:pointer;
+      transition:all .2s; display:inline-flex; align-items:center; gap:.5rem; font-weight:700; }
+    .btn-start { background:var(--cyan); color:#080c14; }
+    .btn-start:hover { box-shadow:0 0 25px rgba(0,212,255,.5); transform:translateY(-1px); }
+    .btn-stop { background:var(--red); color:#fff; }
+    .btn-stop:hover { box-shadow:0 0 25px rgba(255,68,68,.4); }
+    .btn:disabled { opacity:.35; cursor:not-allowed; transform:none!important; box-shadow:none!important; }
+    .status-bar { display:flex; align-items:center; gap:.5rem; padding:.55rem .9rem;
+      border-radius:7px; font-size:.82rem; margin-bottom:.8rem; }
+    .status-bar.ok   { background:rgba(0,204,68,.1);  border:1px solid rgba(0,204,68,.25);  color:var(--green); }
+    .status-bar.off  { background:rgba(255,68,68,.08); border:1px solid rgba(255,68,68,.2);  color:var(--red);   }
+    .status-bar.info { background:rgba(0,212,255,.08); border:1px solid rgba(0,212,255,.2);  color:var(--cyan);  }
+    .sdot { width:7px; height:7px; border-radius:50%; background:currentColor; }
+    .sdot.blink { animation:blink 1s infinite; }
+    .alert-item { display:flex; align-items:center; gap:.7rem; padding:.7rem 1rem;
+      border-radius:8px; margin-bottom:.5rem; background:rgba(255,255,255,.03);
+      border-left:4px solid var(--cyan); animation:slideIn .25s ease; }
+    @keyframes slideIn { from{opacity:0;transform:translateX(-8px);} to{opacity:1;transform:translateX(0);} }
+    .alert-item.red    { border-left-color:var(--red);    }
+    .alert-item.orange { border-left-color:var(--orange); }
+    .alert-item.yellow { border-left-color:var(--yellow); }
+    .alert-item.green  { border-left-color:var(--green);  }
+    .al-label { font-family:'Orbitron',monospace; font-size:.75rem; color:#fff; flex:1; }
+    .al-dist  { font-size:.8rem; font-weight:600; }
+    .al-dist.red    { color:var(--red);    }
+    .al-dist.orange { color:var(--orange); }
+    .al-dist.yellow { color:var(--yellow); }
+    .al-dist.green  { color:var(--green);  }
+    .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:.8rem; margin-top:1rem; }
+    .stat-box { background:rgba(0,212,255,.04); border:1px solid var(--border);
+      border-radius:10px; padding:1rem; text-align:center; }
+    .stat-num { font-family:'Orbitron',monospace; font-size:1.6rem; color:var(--cyan); }
+    .stat-lbl { font-size:.7rem; color:#5a6a8a; letter-spacing:.05em; margin-top:.2rem; }
+    .model-info { font-size:.78rem; color:#5a6a8a; margin-top:.8rem; line-height:1.8; }
+    .model-info span { color:var(--cyan); }
+    .legend { display:flex; flex-direction:column; gap:.5rem; margin-top:.5rem; }
+    .leg-row { display:flex; align-items:center; gap:.6rem; font-size:.82rem; }
+    .leg-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+    .classes-grid { display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.5rem; }
+    .class-tag { padding:.25rem .7rem; border-radius:999px; font-size:.7rem;
+      background:rgba(0,212,255,.08); border:1px solid rgba(0,212,255,.2);
+      color:var(--cyan); font-family:'Orbitron',monospace; letter-spacing:.05em; }
+    #last-spoken-bar { display:none; align-items:center; gap:.6rem; padding:.6rem 1rem;
+      border-radius:8px; background:rgba(0,212,255,.07); border:1px solid rgba(0,212,255,.2);
+      margin-bottom:.8rem; font-size:.82rem; color:var(--cyan); }
+    #last-spoken-bar.show { display:flex; }
+    .speak-icon { font-size:1rem; animation: speakpulse 0.6s ease infinite alternate; }
+    @keyframes speakpulse { from{opacity:.4;} to{opacity:1;} }
+    footer { position:relative; z-index:10; text-align:center; padding:1.2rem;
+      border-top:1px solid var(--border); color:#2a3a5a; font-size:.75rem; letter-spacing:.05em; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>&#129504; SIGHTLINK AI</h1>
+  <p>AI-Powered Assistive Navigation for the Visually Impaired</p>
+  <div class="badge"><span class="dot-live"></span> Custom Trained YOLOv8 &middot; Real-Time Detection &middot; Voice Alerts</div>
+</header>
+
+<div class="main">
+
+  <!-- LEFT: CAMERA FEED -->
+  <div>
+    <div class="card">
+      <div class="card-title">&#128247; LIVE CAMERA FEED</div>
+      <div class="feed-wrap" id="feed-wrap">
+        <div class="feed-placeholder">
+          <div class="icon">&#128247;</div>
+          <p>Press <b>START DETECTION</b> to begin</p>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-start" id="btn-start" onclick="startCam()">&#9654; START DETECTION</button>
+        <button class="btn btn-stop"  id="btn-stop"  onclick="stopCam()" disabled>&#9209; STOP</button>
+      </div>
+      <div class="model-info">
+        &#128204; Model: <span>best.pt (Custom Trained — 15 Epochs)</span> &nbsp;|&nbsp;
+        &#127919; Engine: <span>YOLOv8n</span> &nbsp;|&nbsp;
+        &#128266; Audio: <span>All Classes Active</span>
+      </div>
+    </div>
+    <div class="card" style="margin-top:1.2rem;">
+      <div class="card-title">&#127760; DETECTABLE CLASSES</div>
+      <div class="classes-grid">
+        <span class="class-tag">&#128690; Bicyclette</span>
+        <span class="class-tag">&#128663; Car</span>
+        <span class="class-tag">&#128054; Dog</span>
+        <span class="class-tag">&#128689; Motorcycle</span>
+        <span class="class-tag">&#128694; Person</span>
+        <span class="class-tag">&#128721; Traffic Sign</span>
+        <span class="class-tag">&#127795; Tree</span>
+        <span class="class-tag">&#9888; Manhole</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: PANEL -->
+  <div style="display:flex; flex-direction:column; gap:1.2rem;">
+     <div class="card">
+      <div class="card-title">&#128308; SYSTEM STATUS</div>
+      <div id="status-bar" class="status-bar off">
+        <div class="sdot"></div> Camera Offline
+      </div>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-num" id="s-objects">0</div><div class="stat-lbl">OBJECTS NOW</div></div>
+        <div class="stat-box"><div class="stat-num" id="s-seconds">0</div><div class="stat-lbl">SECONDS RUN</div></div>
+        <div class="stat-box"><div class="stat-num" id="s-alerts">0</div><div class="stat-lbl">TOTAL ALERTS</div></div>
+        <div class="stat-box"><div class="stat-num" id="s-status">OFF</div><div class="stat-lbl">CAM STATUS</div></div>
+      </div>
+    </div>
+
+    <div class="card" style="flex:1;">
+      <div class="card-title">&#128680; LIVE DETECTION ALERTS</div>
+      <div id="last-spoken-bar">
+        <span class="speak-icon">&#128266;</span>
+        <span id="last-spoken-text">—</span>
+      </div>
+      <div id="alerts-list">
+        <div class="status-bar info" style="margin:0;">
+          <div class="sdot"></div> Waiting for detection to start...
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">&#127752; DISTANCE LEGEND</div>
+      <div class="legend">
+        <div class="leg-row"><div class="leg-dot" style="background:var(--red)"></div><b style="color:var(--red)">Very Close</b> &mdash; Immediate danger &#9888;</div>
+        <div class="leg-row"><div class="leg-dot" style="background:var(--orange)"></div><b style="color:var(--orange)">Near</b> &mdash; Caution needed</div>
+        <div class="leg-row"><div class="leg-dot" style="background:var(--yellow)"></div><b style="color:var(--yellow)">Approaching</b> &mdash; Be aware</div>
+        <div class="leg-row"><div class="leg-dot" style="background:var(--green)"></div><b style="color:var(--green)">Far</b> &mdash; Safe distance &#10003;</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<footer>SightLink AI &nbsp;&middot;&nbsp; Major Project &nbsp;&middot;&nbsp; Computer Science &nbsp;&middot;&nbsp; Custom Trained YOLOv8 &nbsp;&middot;&nbsp; 95% mAP50</footer>
+
+<script>
+  let running = false, seconds = 0, totalAlerts = 0, timer = null;
+
+  function startCam() {
+    fetch('/start_cam').then(() => {
+      running = true; seconds = 0;
+      document.getElementById('btn-start').disabled = true;
+      document.getElementById('btn-stop').disabled  = false;
+      document.getElementById('feed-wrap').innerHTML = '<img src="/video_feed" alt="Live Feed"/>';
+      setStatus('ok', '&#128994; Live Detection Running...');
+      document.getElementById('s-status').textContent = 'ON';
+      document.getElementById('alerts-list').innerHTML =
+        '<div class="status-bar ok" style="margin:0;"><div class="sdot blink"></div> Scanning environment... Audio alerts active for all objects.</div>';
+      timer = setInterval(() => {
+        seconds++;
+        document.getElementById('s-seconds').textContent = seconds;
+        fetchAlerts();
+      }, 1000);
+    });
+  }
+
+  function stopCam() {
+    if (!running) return;
+    fetch('/stop_cam').then(() => {
+      running = false; clearInterval(timer);
+      document.getElementById('btn-start').disabled = false;
+      document.getElementById('btn-stop').disabled  = true;
+      document.getElementById('feed-wrap').innerHTML =
+        '<div class="feed-placeholder"><div class="icon">&#128247;</div><p>Press <b>START DETECTION</b> to begin</p></div>';
+      setStatus('off', '&#128308; Camera Offline');
+      document.getElementById('s-status').textContent = 'OFF';
+      document.getElementById('s-objects').textContent = '0';
+      document.getElementById('last-spoken-bar').classList.remove('show');
+      document.getElementById('alerts-list').innerHTML =
+        '<div class="status-bar info" style="margin:0;"><div class="sdot"></div> Detection stopped.</div>';
+    });
+  }
+
+  function setStatus(type, msg) {
+    const el = document.getElementById('status-bar');
+    el.className = 'status-bar ' + type;
+    el.innerHTML = '<div class="sdot' + (type==='ok' ? ' blink' : '') + '"></div> ' + msg;
+  }
+
+  function updateLastSpoken(label, dist) {
+    const bar = document.getElementById('last-spoken-bar');
+    const txt = document.getElementById('last-spoken-text');
+    txt.textContent = `Speaking: "${label} is ${dist}"`;
+    bar.classList.add('show');
+    setTimeout(() => bar.classList.remove('show'), 4000);
+  }
+
+  async function fetchAlerts() {
+    if (!running) return;
+    try {
+      const res  = await fetch('/get_detections');
+      const data = await res.json();
+      const dets = data.detections || [];
+
+      document.getElementById('s-objects').textContent = dets.length;
+
+      const urgent = dets.filter(d => d.distance === 'Very Close' || d.distance === 'Near').length;
+      if (urgent > 0) {
+        totalAlerts += urgent;
+         document.getElementById('s-alerts').textContent = totalAlerts;
+        const first = dets.find(d => d.distance === 'Very Close' || d.distance === 'Near');
+        if (first) updateLastSpoken(first.label, first.distance);
+      }
+
+      if (dets.length > 0) {
+        const order = { 'Very Close': 0, 'Near': 1, 'Approaching': 2, 'Far': 3 };
+        dets.sort((a, b) => (order[a.distance] || 3) - (order[b.distance] || 3));
+        document.getElementById('alerts-list').innerHTML = dets.map(d =>
+          `<div class="alert-item ${d.color}">
+            <span class="al-label">&#127919; ${d.label.toUpperCase()}</span>
+            <span class="al-dist ${d.color}">${d.distance}</span>
+          </div>`
+        ).join('');
+      } else {
+        document.getElementById('alerts-list').innerHTML =
+          '<div class="status-bar ok" style="margin:0;"><div class="sdot"></div> &#10003; Path is clear</div>';
+      }
+    } catch(e) {}
+  }
+</script>
+</body>
+</html>
